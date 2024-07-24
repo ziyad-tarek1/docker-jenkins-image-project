@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Step 1: run the Docker image
+# docker build -t my-jenkins-image .
+docker run -d \
+  --name jenkins-DinD \
+  -p 8080:8080 \
+  -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(which docker):/usr/bin/docker:ro \
+  jenkins/jenkins:lts
+
+# Wait for the container to start
+sleep 40
+
+# Step 2: Create Docker group, add Jenkins user to the Docker group, and change permissions
+docker exec -u 0 jenkins-DinD bash -c "groupadd docker && usermod -aG docker jenkins && chmod 666 /var/run/docker.sock"
+sleep 10
+
+# Step 3: Restart Jenkins container to apply group changes
+docker restart jenkins-DinD
+sleep 25
+
+# echo debug massage
+echo "Jenkins container setup complete........."
+#echo $(sudo cat /var/jenkins_home/secrets/initialAdminPassword)
+
+docker exec -it jenkins-DinD cat /var/jenkins_home/secrets/initialAdminPassword
